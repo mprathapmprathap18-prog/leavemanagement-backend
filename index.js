@@ -13,11 +13,13 @@ const db = mysql.createConnection({
   password: "YOUR_PASSWORD",
   database: "YOUR_DB"
 });
-
 db.connect(err => {
-  if (err) console.log(err);
-  else console.log("DB Connected");
-});
+  if (err) {
+    console.log("DB Error:", err);
+  } else {
+    console.log("DB Connected");
+  }
+});;
 //login api//
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
