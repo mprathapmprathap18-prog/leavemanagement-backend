@@ -8,10 +8,11 @@ app.use(express.json());
 
 // DB connection
 const db = mysql.createConnection({
-  host: "YOUR_HOST",
-  user: "YOUR_USER",
-  password: "YOUR_PASSWORD",
-  database: "YOUR_DB"
+  host: "mysql.railway.internal",
+  user: "root",
+  password: "JKmltDKOsdamqsgbyQDnlLjngsXabdio",
+  database: "railway",
+  port:3306
 });
 db.connect(err => {
   if (err) {
