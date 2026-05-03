@@ -18,3 +18,73 @@ db.connect(err => {
   if (err) console.log(err);
   else console.log("DB Connected");
 });
+//login api//
+app.post("/login", (req, res) => {
+  const { username, password } = req.body;
+
+  db.query(
+    "SELECT * FROM users WHERE username=? AND password=?",
+    [username, password],
+    (err, result) => {
+      if (err) return res.send(err);
+
+      if (result.length > 0) {
+        res.json(result[0]);
+      } else {
+        res.send("Invalid login");
+      }
+    }
+  );
+});
+//student_profile//
+app.get("/student/:id", (req, res) => {
+  db.query(
+    "SELECT * FROM student_profile WHERE user_id=?",
+    [req.params.id],
+    (err, result) => {
+      res.json(result[0]);
+    }
+  );
+});
+//leave apply api//
+app.post("/apply-leave", (req, res) => {
+  const { student_id, reason } = req.body;
+
+  db.query(
+    "INSERT INTO leave_requests (student_id, reason) VALUES (?, ?)",
+    [student_id, reason],
+    (err, result) => {
+      if (err) return res.send(err);
+      res.send("Leave Applied");
+    }
+  );
+});
+//manager view//
+app.get("/manager/:id", (req, res) => {
+  db.query(
+    `SELECT lr.*, sp.name, sp.dept, sp.college, sp.year
+     FROM leave_requests lr
+     JOIN student_profile sp ON lr.student_id = sp.id
+     WHERE sp.manager_id = ?`,
+    [req.params.id],
+    (err, result) => {
+      res.json(result);
+    }
+  );
+});
+//tutor view//
+app.get("/manager/:id", (req, res) => {
+  db.query(
+    `SELECT lr.*, sp.name, sp.dept, sp.college, sp.year
+     FROM leave_requests lr
+     JOIN student_profile sp ON lr.student_id = sp.id
+     WHERE sp.manager_id = ?`,
+    [req.params.id],
+    (err, result) => {
+      res.json(result);
+    }
+  );
+});
+app.listen(3000, () => {
+  console.log("Server running");
+});
