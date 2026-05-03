@@ -37,12 +37,12 @@ app.post("/login", (req, res) => {
   );
 });
 //student_profile//
-app.get("/student/:id", (req, res) => {
+app.get("/api/leaves/student/:id", (req, res) => {
   db.query(
-    "SELECT * FROM student_profile WHERE user_id=?",
+    "SELECT * FROM leave_requests WHERE student_id=?",
     [req.params.id],
     (err, result) => {
-      res.json(result[0]);
+      res.json(result);
     }
   );
 });
@@ -83,6 +83,13 @@ app.get("/manager/:id", (req, res) => {
     (err, result) => {
       res.json(result);
     }
+  );
+});
+//tutor approve//
+app.put("/api/leaves/tutor/approve/:id", (req, res) => {
+  db.query(
+    "UPDATE leave_requests SET final_status='approved', tutor_status='approved' WHERE id=?",
+    [req.params.id]
   );
 });
 app.listen(3000, () => {
