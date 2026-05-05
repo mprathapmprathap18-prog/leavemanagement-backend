@@ -22,7 +22,7 @@ db.connect(err => {
   }
 });;
 //login api//
-app.post("/api/login", (req, res) => {
+app.post("login", (req, res) => {
   const { username, password } = req.body;
 
   db.query(
