@@ -7,23 +7,18 @@ app.use(cors());
 app.use(express.json());
 
 // DB connection
-const mysql = require("mysql2");
-
 const db = mysql.createConnection(process.env.MYSQL_PUBLIC_URL);
+
 db.connect(err => {
   if (err) {
     console.log("DB Error:", err);
   } else {
     console.log("DB Connected");
   }
-});;
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log("Server running");
 });
-//login api//
-app.post("login", (req, res) => {
+
+/* ================= LOGIN ================= */
+app.post("/login", (req, res) => {
   const { username, password } = req.body;
 
   db.query(
@@ -35,12 +30,13 @@ app.post("login", (req, res) => {
       if (result.length > 0) {
         res.json(result[0]);
       } else {
-        res.send("Invalid login");
+        res.status(401).json({ message: "Invalid login" });
       }
     }
   );
 });
-//student_profile//
+
+/* ================= STUDENT ================= */
 app.get("/api/leaves/student/:id", (req, res) => {
   db.query(
     "SELECT * FROM leave_requests WHERE student_id=?",
@@ -50,23 +46,25 @@ app.get("/api/leaves/student/:id", (req, res) => {
     }
   );
 });
-//leave apply api//
+
+/* ================= APPLY LEAVE ================= */
 app.post("/apply-leave", (req, res) => {
   const { student_id, reason } = req.body;
 
   db.query(
     "INSERT INTO leave_requests (student_id, reason) VALUES (?, ?)",
     [student_id, reason],
-    (err, result) => {
+    (err) => {
       if (err) return res.send(err);
       res.send("Leave Applied");
     }
   );
 });
-//manager view//
+
+/* ================= MANAGER ================= */
 app.get("/manager/:id", (req, res) => {
   db.query(
-    `SELECT lr.*, sp.name, sp.dept, sp.college, sp.year
+    `SELECT lr.*, sp.name, sp.dept
      FROM leave_requests lr
      JOIN student_profile sp ON lr.student_id = sp.id
      WHERE sp.manager_id = ?`,
@@ -76,26 +74,36 @@ app.get("/manager/:id", (req, res) => {
     }
   );
 });
-//tutor view//
-app.get("/manager/:id", (req, res) => {
+
+/* ================= TUTOR ================= */
+app.get("/tutor/:id", (req, res) => {
   db.query(
-    `SELECT lr.*, sp.name, sp.dept, sp.college, sp.year
+    `SELECT lr.*, sp.name, sp.dept
      FROM leave_requests lr
      JOIN student_profile sp ON lr.student_id = sp.id
-     WHERE sp.manager_id = ?`,
+     WHERE sp.tutor_id = ?`,
     [req.params.id],
     (err, result) => {
       res.json(result);
     }
   );
 });
-//tutor approve//
+
+/* ================= TUTOR APPROVE ================= */
 app.put("/api/leaves/tutor/approve/:id", (req, res) => {
   db.query(
-    "UPDATE leave_requests SET final_status='approved', tutor_status='approved' WHERE id=?",
-    [req.params.id]
+    "UPDATE leave_requests SET tutor_status='approved', final_status='approved' WHERE id=?",
+    [req.params.id],
+    (err) => {
+      if (err) return res.send(err);
+      res.send("Approved");
+    }
   );
 });
-app.listen(3000, () => {
+
+/* ================= SERVER ================= */
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
   console.log("Server running");
 });
