@@ -37,7 +37,7 @@ app.post("/login", (req, res) => {
 });
 
 /* ================= STUDENT ================= */
-app.get("/api/leaves/student/:id", (req, res) => {
+app.get("/leaves/student/:id", (req, res) => {
   db.query(
     "SELECT * FROM leave_requests WHERE student_id=?",
     [req.params.id],
@@ -90,7 +90,7 @@ app.get("/tutor/:id", (req, res) => {
 });
 
 /* ================= TUTOR APPROVE ================= */
-app.put("/api/leaves/tutor/approve/:id", (req, res) => {
+app.put("/leaves/tutor/approve/:id", (req, res) => {
   db.query(
     "UPDATE leave_requests SET tutor_status='approved', final_status='approved' WHERE id=?",
     [req.params.id],
