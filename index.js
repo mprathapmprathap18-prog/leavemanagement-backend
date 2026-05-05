@@ -17,6 +17,11 @@ db.connect(err => {
     console.log("DB Connected");
   }
 });;
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log("Server running");
+});
 //login api//
 app.post("login", (req, res) => {
   const { username, password } = req.body;
