@@ -6,9 +6,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// DB
-const db = mysql.createConnection(process.env.MYSQL_PUBLIC_URL);
+// DBconst mysql = require("mysql2");
 
+const db = mysql.createPool(process.env.MYSQL_PUBLIC_URL);
 db.connect(err => {
   if (err) console.log(err);
   else console.log("DB Connected");
