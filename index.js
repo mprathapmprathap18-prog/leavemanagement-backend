@@ -19,12 +19,21 @@ app.post("/login", (req, res) => {
   const { username, password } = req.body;
 
   db.query(
-    "SELECT * FROM users WHERE username=? AND password=?",
+    `SELECT u.id, u.username, u.role,
+            sp.name, sp.dept, sp.hostelName,
+            sp.manager_id, sp.tutor_id
+     FROM users u
+     LEFT JOIN student_profile sp ON u.id = sp.id
+     WHERE u.username=? AND u.password=?`,
     [username, password],
     (err, result) => {
       if (err) return res.send(err);
-      if (result.length > 0) res.json(result[0]);
-      else res.status(401).json({ message: "Invalid" });
+
+      if (result.length > 0) {
+        res.json(result[0]); // FULL DATA NOW
+      } else {
+        res.status(401).json({ message: "Invalid login" });
+      }
     }
   );
 });
@@ -34,11 +43,24 @@ app.post("/apply-leave", (req, res) => {
   const { student_id, reason } = req.body;
 
   db.query(
-    "INSERT INTO leave_requests (student_id, reason) VALUES (?,?)",
-    [student_id, reason],
-    (err) => {
+    `SELECT manager_id, tutor_id FROM student_profile WHERE id=?`,
+    [student_id],
+    (err, result) => {
       if (err) return res.send(err);
-      res.send("Applied");
+
+      const manager_id = result[0].manager_id;
+      const tutor_id = result[0].tutor_id;
+
+      db.query(
+        `INSERT INTO leave_requests 
+        (student_id, reason, manager_status, tutor_status, final_status)
+        VALUES (?, ?, 'pending', 'pending', 'pending')`,
+        [student_id, reason],
+        (err2) => {
+          if (err2) return res.send(err2);
+          res.send("Leave Applied");
+        }
+      );
     }
   );
 });
@@ -55,15 +77,14 @@ app.get("/api/leaves/student/:id", (req, res) => {
 /* ================= MANAGER LIST ================= */
 app.get("/manager/:id", (req, res) => {
   db.query(
-    `SELECT lr.*, sp.name, sp.dept
+    `SELECT lr.*, sp.name, sp.dept, sp.hostelName
      FROM leave_requests lr
      JOIN student_profile sp ON lr.student_id = sp.id
-     WHERE sp.manager_id=?`,
+     WHERE sp.manager_id = ? AND sp.hostelName = sp.hostelName`,
     [req.params.id],
     (err, result) => res.json(result)
   );
 });
-
 /* ================= MANAGER APPROVE ================= */
 app.put("/api/leaves/manager/approve/:id", (req, res) => {
   db.query(
