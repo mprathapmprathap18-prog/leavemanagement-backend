@@ -16,23 +16,23 @@ app.use(cors());
 
 // MySQL Connection Pool - Using Railway MySQL Public URL
 const pool = mysql.createPool({
-  // Render reads from environment variables
-  // Use MYSQL_PUBLIC_URL from Railway
-  uri: process.env.MYSQL_PUBLIC_URL,
-  
-  // Fallback individual variables
-  host: process.env.MYSQLHOST,
-  user: process.env.MYSQLUSER,
-  password: process.env.MYSQLPASSWORD,
-  database: process.env.MYSQLDATABASE,
-  port: process.env.MYSQLPORT || 3306,
-  
+  host: 'tramway.proxy.rlwy.net',
+  user: 'root',
+  password: 'JKmltDKOsdamqsgbyQDnlLjngsXabdio',
+  database: 'railway',
+  port: 28593,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0,
-  enableKeepAlive: true,
-  keepAliveInitialDelayMs: 0
 });
+(async () => {
+  try {
+    const conn = await pool.getConnection();
+    console.log("✅ MySQL Connected!");
+    conn.release();
+  } catch (err) {
+    console.error("❌ MySQL Error:", err.message);
+  }
+})();
 
 // JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_change_in_production';
