@@ -15,15 +15,17 @@ app.use(express.json());
 app.use(cors());
 
 // MySQL Connection Pool - Using Railway MySQL Public URL
-const pool = mysql.createPool({
-  host: 'tramway.proxy.rlwy.net',
-  user: 'root',
-  password: 'JKmltDKOsdamqsgbyQDnlLjngsXabdio',
-  database: 'railway',
-  port: 28593,
-  waitForConnections: true,
-  connectionLimit: 10,
-});
+const pool = mysql.createPool(process.env.MYSQL_PUBLIC_URL);
+
+(async () => {
+  try {
+    const conn = await pool.getConnection();
+    console.log("✅ MySQL Connected!");
+    conn.release();
+  } catch (err) {
+    console.error("❌ MySQL Error:", err.message);
+  }
+})();
 (async () => {
   try {
     const conn = await pool.getConnection();
