@@ -102,11 +102,11 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
 
-    let userInfo = {
-      id: user.id,
-      username: user.username,
-      role: user.role
-    };
+  let userInfo = {
+  id: user.id,
+  username: user.username,
+  role: user.role.toUpperCase()
+};
 
     if (user.role === 'STUDENT') {
       const [students] = await connection.execute(
