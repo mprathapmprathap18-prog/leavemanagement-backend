@@ -147,7 +147,7 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.post('/api/leaves/submit', authenticateToken, authorizeRole(['STUDENT']), async (req, res) => {
   try {
-    const { reason } = req.body;
+   const { leave_type, start_date, end_date, reason } = req.body;
     const userId = req.user.id;
 
     if (!reason) {
