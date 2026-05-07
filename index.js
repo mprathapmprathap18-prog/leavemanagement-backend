@@ -120,10 +120,14 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, username: user.username, role: user.role },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
+  {
+    id: user.id,
+    username: user.username,
+    role: user.role.toUpperCase()
+  },
+  JWT_SECRET,
+  { expiresIn: '24h' }
+);
 
     connection.release();
 
