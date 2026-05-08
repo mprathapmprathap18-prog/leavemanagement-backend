@@ -67,6 +67,9 @@ const authenticateToken = (req, res, next) => {
 const authorizeRole = (roles) => {
   return (req, res, next) => {
 
+    console.log("USER ROLE:", req.user.role);
+    console.log("ALLOWED ROLES:", roles);
+
     const userRole = req.user.role.toLowerCase();
 
     const allowedRoles = roles.map(
