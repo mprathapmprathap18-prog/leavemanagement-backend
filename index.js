@@ -66,13 +66,25 @@ const authenticateToken = (req, res, next) => {
 
 const authorizeRole = (roles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ error: 'Unauthorized access' });
+
+    console.log("USER ROLE:", req.user.role);
+    console.log("ALLOWED ROLES:", roles);
+
+    const userRole = req.user.role.toLowerCase();
+
+    const allowedRoles = roles.map(
+      role => role.toLowerCase()
+    );
+
+    if (!allowedRoles.includes(userRole)) {
+      return res.status(403).json({
+        error: 'Unauthorized access'
+      });
     }
+
     next();
   };
 };
-
 // ==================== AUTH ENDPOINTS ====================
 
 app.post('/api/auth/login', async (req, res) => {
