@@ -183,11 +183,31 @@ app.post('/api/leaves/submit',
 
     const studentId = students[0].id;
 
-    const [result] = await connection.execute(
-      `INSERT INTO leave_requests (student_id, reason, manager_status, tutor_status, created_at)
-       VALUES (?, ?, 'PENDING', 'PENDING', NOW())`,
-      [studentId, reason]
-    );
+  const [result] = await connection.execute(
+  `INSERT INTO leave_requests
+  (
+    student_id,
+    leave_type,
+    start_date,
+    end_date,
+    reason,
+    manager_status,
+    tutor_status,
+    final_status,
+    created_at
+  )
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+  [
+    studentId,
+    leave_type,
+    start_date,
+    end_date,
+    reason,
+    'PENDING',
+    'PENDING',
+    'PENDING'
+  ]
+);
 
     connection.release();
 
@@ -218,13 +238,17 @@ app.get('/api/leaves/my-leaves', authenticateToken, authorizeRole(['STUDENT']), 
     }
 
     const [leaves] = await connection.execute(
-      `SELECT 
-        id, student_id, reason, manager_status, tutor_status, final_status, created_at
-       FROM leave_requests
-       WHERE student_id = ?
-       ORDER BY created_at DESC`,
-      [students[0].id]
-    );
+     SELECT
+id,
+student_id,
+leave_type,
+start_date,
+end_date,
+reason,
+manager_status,
+tutor_status,
+final_status,
+created_at
 
     connection.release();
 
@@ -382,9 +406,9 @@ app.get('/api/health', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`✅ Render Server running on port ${PORT}`);
-  console.log(`🌐 Using Railway MySQL with public URL`);
-  console.log(`🔐 JWT authentication enabled`);
+console.log(`✅ Render Server running on port ${PORT}`);
+console.log(`🌐 Using Railway MySQL with public URL`);
+console.log(`🔐 JWT authentication enabled`);
 });
 
 module.exports = app;
