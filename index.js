@@ -240,40 +240,41 @@ app.get('/api/leaves/my-leaves', authenticateToken, authorizeRole(['STUDENT']), 
       return res.status(404).json({ error: 'Student profile not found' });
     }
 
-    const [leaves] = await connection.execute(
-  SELECT
- leave_requests.id,
- leave_requests.student_id,
- leave_requests.leave_type,
- leave_requests.start_date,
- leave_requests.end_date,
- leave_requests.reason,
- leave_requests.manager_status,
- leave_requests.tutor_status,
- leave_requests.final_status,
- leave_requests.created_at,
+const [leaves] = await connection.execute(
+  `SELECT
+    leave_requests.id,
+    leave_requests.student_id,
+    leave_requests.leave_type,
+    leave_requests.start_date,
+    leave_requests.end_date,
+    leave_requests.reason,
+    leave_requests.manager_status,
+    leave_requests.tutor_status,
+    leave_requests.final_status,
+    leave_requests.created_at,
 
- student_profile.name,
- student_profile.dept,
- student_profile.year,
- student_profile.college,
- student_profile.hostel_name
+    student_profile.name,
+    student_profile.dept,
+    student_profile.year,
+    student_profile.college,
+    student_profile.hostel_name
 
-FROM leave_requests
+   FROM leave_requests
 
-JOIN student_profile
-ON leave_requests.student_id = student_profile.id
-    connection.release();
+   JOIN student_profile
+   ON leave_requests.student_id = student_profile.id
 
-    res.json({
-      message: 'Leaves retrieved successfully',
-      leaves: leaves
-    });
+   WHERE leave_requests.student_id = ?
 
-  } catch (error) {
-    console.error('Get leaves error:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
+   ORDER BY leave_requests.created_at DESC`,
+  [students[0].id]
+);
+
+connection.release();
+
+res.json({
+  message: 'Leaves retrieved successfully',
+  leaves: leaves
 });
 
 // ==================== MANAGER ENDPOINTS ====================
