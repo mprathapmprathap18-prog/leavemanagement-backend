@@ -308,19 +308,41 @@ app.get('/api/manager/pending-leaves', authenticateToken, authorizeRole(['MANAGE
     const userId = req.user.id;
     const connection = await pool.getConnection();
 
-    const [leaves] = await connection.execute(
-      `SELECT 
-        lr.id, lr.student_id, lr.reason, lr.manager_status, lr.tutor_status, lr.created_at,
-        sp.name as student_name, sp.dept, u.username,
-        sp.year, sp.college
-       FROM leave_requests lr
-       JOIN student_profile sp ON lr.student_id = sp.id
-       JOIN users u ON sp.user_id = u.id
-       WHERE sp.manager_id = ? AND lr.manager_status = 'PENDING'
-       ORDER BY lr.created_at ASC`,
-      [userId]
-    );
+   const [leaves] = await connection.execute(
+  `SELECT
+    leave_requests.id,
+    leave_requests.student_id,
+    leave_requests.leave_type,
+    leave_requests.start_date,
+    leave_requests.end_date,
+    leave_requests.reason,
+    leave_requests.manager_status,
+    leave_requests.tutor_status,
+    leave_requests.final_status,
+    leave_requests.created_at,
 
+    student_profile.name AS student_name,
+    student_profile.dept,
+    student_profile.year,
+    student_profile.college,
+    student_profile.hostel_name,
+
+    users.username
+
+   FROM leave_requests
+
+   JOIN student_profile
+   ON leave_requests.student_id = student_profile.id
+
+   JOIN users
+   ON student_profile.user_id = users.id
+
+   WHERE student_profile.manager_id = ?
+   AND leave_requests.manager_status = 'PENDING'
+
+   ORDER BY leave_requests.created_at ASC`,
+  [userId]
+);
     connection.release();
 
     res.json({
@@ -368,20 +390,47 @@ app.post('/api/manager/approve-leave/:leaveId', authenticateToken, authorizeRole
 // ==================== TUTOR ENDPOINTS ====================
 
 app.get('/api/tutor/pending-leaves', authenticateToken, authorizeRole(['TUTOR']), async (req, res) => {
+
   try {
+
     const userId = req.user.id;
+
     const connection = await pool.getConnection();
 
     const [leaves] = await connection.execute(
-      `SELECT 
-        lr.id, lr.student_id, lr.reason, lr.manager_status, lr.tutor_status, lr.created_at,
-        sp.name as student_name, sp.dept, u.username,
-        sp.year, sp.college
-       FROM leave_requests lr
-       JOIN student_profile sp ON lr.student_id = sp.id
-       JOIN users u ON sp.user_id = u.id
-       WHERE sp.tutor_id = ? AND lr.manager_status = 'APPROVED' AND lr.tutor_status = 'PENDING'
-       ORDER BY lr.created_at ASC`,
+      `SELECT
+        leave_requests.id,
+        leave_requests.student_id,
+        leave_requests.leave_type,
+        leave_requests.start_date,
+        leave_requests.end_date,
+        leave_requests.reason,
+        leave_requests.manager_status,
+        leave_requests.tutor_status,
+        leave_requests.final_status,
+        leave_requests.created_at,
+
+        student_profile.name AS student_name,
+        student_profile.dept,
+        student_profile.year,
+        student_profile.college,
+        student_profile.hostel_name,
+
+        users.username
+
+      FROM leave_requests
+
+      JOIN student_profile
+      ON leave_requests.student_id = student_profile.id
+
+      JOIN users
+      ON student_profile.user_id = users.id
+
+      WHERE student_profile.tutor_id = ?
+      AND leave_requests.manager_status = 'APPROVED'
+      AND leave_requests.tutor_status = 'PENDING'
+
+      ORDER BY leave_requests.created_at ASC`,
       [userId]
     );
 
@@ -393,11 +442,14 @@ app.get('/api/tutor/pending-leaves', authenticateToken, authorizeRole(['TUTOR'])
     });
 
   } catch (error) {
+
     console.error('Get tutor leaves error:', error);
-    res.status(500).json({ error: 'Server error' });
+
+    res.status(500).json({
+      error: 'Server error'
+    });
   }
 });
-
 app.post('/api/tutor/approve-leave/:leaveId', authenticateToken, authorizeRole(['TUTOR']), async (req, res) => {
   try {
     const { leaveId } = req.params;
