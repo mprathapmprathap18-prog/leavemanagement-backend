@@ -240,43 +240,63 @@ app.get('/api/leaves/my-leaves', authenticateToken, authorizeRole(['STUDENT']), 
       return res.status(404).json({ error: 'Student profile not found' });
     }
 
-const [leaves] = await connection.execute(
-  `SELECT
-    leave_requests.id,
-    leave_requests.student_id,
-    leave_requests.leave_type,
-    leave_requests.start_date,
-    leave_requests.end_date,
-    leave_requests.reason,
-    leave_requests.manager_status,
-    leave_requests.tutor_status,
-    leave_requests.final_status,
-    leave_requests.created_at,
+app.get('/api/leaves/my-leaves', authenticateToken, authorizeRole(['STUDENT']), async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const connection = await pool.getConnection();
 
-    student_profile.name,
-    student_profile.dept,
-    student_profile.year,
-    student_profile.college,
-    student_profile.hostel_name
+    const [students] = await connection.execute(
+      'SELECT id FROM student_profile WHERE user_id = ?',
+      [userId]
+    );
 
-   FROM leave_requests
+    if (students.length === 0) {
+      connection.release();
+      return res.status(404).json({ error: 'Student profile not found' });
+    }
 
-   JOIN student_profile
-   ON leave_requests.student_id = student_profile.id
+    const [leaves] = await connection.execute(
+      `SELECT
+        leave_requests.id,
+        leave_requests.student_id,
+        leave_requests.leave_type,
+        leave_requests.start_date,
+        leave_requests.end_date,
+        leave_requests.reason,
+        leave_requests.manager_status,
+        leave_requests.tutor_status,
+        leave_requests.final_status,
+        leave_requests.created_at,
 
-   WHERE leave_requests.student_id = ?
+        student_profile.name,
+        student_profile.dept,
+        student_profile.year,
+        student_profile.college,
+        student_profile.hostel_name
 
-   ORDER BY leave_requests.created_at DESC`,
-  [students[0].id]
-);
+       FROM leave_requests
 
-connection.release();
+       JOIN student_profile
+       ON leave_requests.student_id = student_profile.id
 
-res.json({
-  message: 'Leaves retrieved successfully',
-  leaves: leaves
+       WHERE leave_requests.student_id = ?
+
+       ORDER BY leave_requests.created_at DESC`,
+      [students[0].id]
+    );
+
+    connection.release();
+
+    res.json({
+      message: 'Leaves retrieved successfully',
+      leaves: leaves
+    });
+
+  } catch (error) {
+    console.error('Get leaves error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
-
 // ==================== MANAGER ENDPOINTS ====================
 
 app.get('/api/manager/pending-leaves', authenticateToken, authorizeRole(['MANAGER']), async (req, res) => {
