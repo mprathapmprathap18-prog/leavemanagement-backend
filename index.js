@@ -224,22 +224,6 @@ app.post('/api/leaves/submit',
     res.status(500).json({ error: 'Server error' });
   }
 });
-
-app.get('/api/leaves/my-leaves', authenticateToken, authorizeRole(['STUDENT']), async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const connection = await pool.getConnection();
-
-    const [students] = await connection.execute(
-      'SELECT id FROM student_profile WHERE user_id = ?',
-      [userId]
-    );
-
-    if (students.length === 0) {
-      connection.release();
-      return res.status(404).json({ error: 'Student profile not found' });
-    }
-
 app.get('/api/leaves/my-leaves', authenticateToken, authorizeRole(['STUDENT']), async (req, res) => {
   try {
     const userId = req.user.id;
