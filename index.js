@@ -289,12 +289,12 @@ app.get('/api/leaves/my-leaves',
 
   } catch (error) {
 
-    console.log(error);
+  console.log("MY LEAVES ERROR:", error);
 
-    res.status(500).json({
-      error: error.message
-    });
-  }
+  res.status(500).json({
+    error: error.message
+  });
+}
 });
 // ==================== MANAGER ENDPOINTS ====================
 
