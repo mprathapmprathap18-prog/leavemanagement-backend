@@ -183,7 +183,7 @@ app.post('/api/leaves/submit',
 
     const studentId = students[0].id;
 
-  const [result] = await connection.execute(
+ const [result] = await connection.execute(
   `INSERT INTO leave_requests
   (
     student_id,
@@ -196,19 +196,22 @@ app.post('/api/leaves/submit',
     final_status,
     created_at
   )
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+  VALUES
+  (
+    ?, ?, ?, ?, ?,
+    'PENDING',
+    'PENDING',
+    'PENDING',
+    NOW()
+  )`,
   [
     studentId,
     leave_type,
     start_date,
     end_date,
-    reason,
-    'PENDING',
-    'PENDING',
-    'PENDING'
+    reason
   ]
 );
-
     connection.release();
 
     res.status(201).json({
@@ -238,18 +241,28 @@ app.get('/api/leaves/my-leaves', authenticateToken, authorizeRole(['STUDENT']), 
     }
 
     const [leaves] = await connection.execute(
-     SELECT
-id,
-student_id,
-leave_type,
-start_date,
-end_date,
-reason,
-manager_status,
-tutor_status,
-final_status,
-created_at
+  SELECT
+ leave_requests.id,
+ leave_requests.student_id,
+ leave_requests.leave_type,
+ leave_requests.start_date,
+ leave_requests.end_date,
+ leave_requests.reason,
+ leave_requests.manager_status,
+ leave_requests.tutor_status,
+ leave_requests.final_status,
+ leave_requests.created_at,
 
+ student_profile.name,
+ student_profile.dept,
+ student_profile.year,
+ student_profile.college,
+ student_profile.hostel_name
+
+FROM leave_requests
+
+JOIN student_profile
+ON leave_requests.student_id = student_profile.id
     connection.release();
 
     res.json({
