@@ -224,9 +224,15 @@ app.post('/api/leaves/submit',
     res.status(500).json({ error: 'Server error' });
   }
 });
-app.get('/api/leaves/my-leaves', authenticateToken, authorizeRole(['STUDENT']), async (req, res) => {
+app.get('/api/leaves/my-leaves',
+ authenticateToken,
+ authorizeRole(['STUDENT']),
+ async (req, res) => {
+
   try {
+
     const userId = req.user.id;
+
     const connection = await pool.getConnection();
 
     const [students] = await connection.execute(
@@ -236,8 +242,13 @@ app.get('/api/leaves/my-leaves', authenticateToken, authorizeRole(['STUDENT']), 
 
     if (students.length === 0) {
       connection.release();
-      return res.status(404).json({ error: 'Student profile not found' });
+
+      return res.status(404).json({
+        error: 'Student profile not found'
+      });
     }
+
+    const studentId = students[0].id;
 
     const [leaves] = await connection.execute(
       `SELECT
@@ -258,27 +269,31 @@ app.get('/api/leaves/my-leaves', authenticateToken, authorizeRole(['STUDENT']), 
         student_profile.college,
         student_profile.hostel_name
 
-       FROM leave_requests
+      FROM leave_requests
 
-       JOIN student_profile
-       ON leave_requests.student_id = student_profile.id
+      JOIN student_profile
+      ON leave_requests.student_id = student_profile.id
 
-       WHERE leave_requests.student_id = ?
+      WHERE leave_requests.student_id = ?
 
-       ORDER BY leave_requests.created_at DESC`,
-      [students[0].id]
+      ORDER BY leave_requests.created_at DESC`,
+      [studentId]
     );
 
     connection.release();
 
     res.json({
-      message: 'Leaves retrieved successfully',
+      success: true,
       leaves: leaves
     });
 
   } catch (error) {
-    console.error('Get leaves error:', error);
-    res.status(500).json({ error: 'Server error' });
+
+    console.log(error);
+
+    res.status(500).json({
+      error: error.message
+    });
   }
 });
 // ==================== MANAGER ENDPOINTS ====================
