@@ -248,7 +248,12 @@ app.get('/api/leaves/my-leaves',
       });
     }
 
-    const studentId = students[0].id;
+   const studentId = students[0].id;
+
+console.log("BODY:", req.body);
+console.log("USER:", req.user);
+console.log("STUDENT ID:", studentId);
+    
 
     const [leaves] = await connection.execute(
       `SELECT
@@ -289,7 +294,7 @@ app.get('/api/leaves/my-leaves',
 
   } catch (error) {
 
-  console.log("MY LEAVES ERROR:", error);
+  console.log("SUBMIT ERROR:", error);
 
   res.status(500).json({
     error: error.message
