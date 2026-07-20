@@ -5,6 +5,7 @@ const cors = require('cors');
 const mysql = require('mysql2/promise');
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
+const mongoose = require("mongoose");
 
 dotenv.config();
 
