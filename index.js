@@ -36,6 +36,16 @@ const pool = mysql.createPool(process.env.MYSQL_PUBLIC_URL);
     console.error("❌ MySQL Error:", err.message);
   }
 })();
+// mongoo db
+const mongoose = require("mongoose");
+
+mongoose.connect(process.env.MONGO_URI)
+.then(() => {
+  console.log("✅ MongoDB Connected!");
+})
+.catch((err) => {
+  console.log("❌ MongoDB Error:", err);
+});
 
 // JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_change_in_production';
