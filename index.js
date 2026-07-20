@@ -1,5 +1,8 @@
 // server.js - Render Deployment Version
 // Connects to Railway MySQL via MYSQL_PUBLIC_URL
+const User = require("./models/User");
+const StudentProfile = require("./models/StudentProfile");
+const LeaveRequest = require("./models/LeaveRequest");
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2/promise');
@@ -108,10 +111,13 @@ app.post('/api/auth/login', async (req, res) => {
 
     const connection = await pool.getConnection();
     
-    const [users] = await connection.execute(
-      'SELECT id, username, password, role FROM users WHERE username = ?',
-      [username]
-    );
+const user = await User.findOne({ username });
+
+if (!user) {
+  return res.status(401).json({
+    error: "Invalid username or password"
+  });
+}
 
     if (users.length === 0) {
       connection.release();
@@ -182,10 +188,14 @@ app.post('/api/leaves/submit',
 
     const connection = await pool.getConnection();
 
-    const [students] = await connection.execute(
-      'SELECT id FROM student_profile WHERE user_id = ?',
-      [userId]
-    );
+   const student = await StudentProfile.findOne({
+  user_id: user._id
+});
+
+if (student) {
+  userInfo.full_name = student.name;
+  userInfo.dept = student.dept;
+}
 
     if (students.length === 0) {
       connection.release();
@@ -223,7 +233,7 @@ app.post('/api/leaves/submit',
     reason
   ]
 );
-    connection.release();
+  
 
     res.status(201).json({
       message: 'Leave request submitted successfully',
