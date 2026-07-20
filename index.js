@@ -40,7 +40,6 @@ const pool = mysql.createPool(process.env.MYSQL_PUBLIC_URL);
   }
 })();
 // mongoo db
-const mongoose = require("mongoose");
 
 mongoose.connect(process.env.MONGO_URI)
 .then(() => {
