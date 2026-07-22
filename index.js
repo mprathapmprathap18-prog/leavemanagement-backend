@@ -5,7 +5,6 @@ const StudentProfile = require("./models/StudentProfile");
 const LeaveRequest = require("./models/LeaveRequest");
 const express = require('express');
 const cors = require('cors');
-const mysql = require('mysql2/promise');
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const mongoose = require("mongoose");
@@ -17,30 +16,7 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cors());
-
-// MySQL Connection Pool - Using Railway MySQL Public URL
-const pool = mysql.createPool(process.env.MYSQL_PUBLIC_URL);
-
-(async () => {
-  try {
-    const conn = await pool.getConnection();
-    console.log("✅ MySQL Connected!");
-    conn.release();
-  } catch (err) {
-    console.error("❌ MySQL Error:", err.message);
-  }
-})();
-(async () => {
-  try {
-    const conn = await pool.getConnection();
-    console.log("✅ MySQL Connected!");
-    conn.release();
-  } catch (err) {
-    console.error("❌ MySQL Error:", err.message);
-  }
-})();
 // mongoo db
-
 mongoose.connect(process.env.MONGO_URI)
 .then(() => {
   console.log("✅ MongoDB Connected!");
@@ -53,13 +29,6 @@ mongoose.connect(process.env.MONGO_URI)
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_change_in_production';
 
 console.log('🚀 Render Backend Starting');
-console.log('📡 Database Config:', {
-  host: process.env.MYSQLHOST,
-  database: process.env.MYSQLDATABASE,
-  port: process.env.MYSQLPORT,
-  hasPublicUrl: !!process.env.MYSQL_PUBLIC_URL
-});
-
 // ==================== MIDDLEWARE ====================
 
 const authenticateToken = (req, res, next) => {
@@ -100,408 +69,336 @@ const authorizeRole = (roles) => {
 };
 // ==================== AUTH ENDPOINTS ====================
 
+// ==================== AUTH ENDPOINTS ====================
+
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { username, password } = req.body;
 
     if (!username || !password) {
-      return res.status(400).json({ error: 'Username and password required' });
+      return res.status(400).json({
+        error: "Username and password required"
+      });
     }
 
-    const connection = await pool.getConnection();
-    
-const user = await User.findOne({ username });
+    // Find user in MongoDB
+    const user = await User.findOne({ username });
 
-if (!user) {
-  return res.status(401).json({
-    error: "Invalid username or password"
-  });
-}
-
-    if (users.length === 0) {
-      connection.release();
-      return res.status(401).json({ error: 'Invalid username or password' });
+    if (!user) {
+      return res.status(401).json({
+        error: "Invalid username or password"
+      });
     }
 
-    const user = users[0];
-
+    // Check password
     if (password !== user.password) {
-      connection.release();
-      return res.status(401).json({ error: 'Invalid username or password' });
+      return res.status(401).json({
+        error: "Invalid username or password"
+      });
     }
 
-  let userInfo = {
-  id: user.id,
-  username: user.username,
-  role: user.role.toUpperCase()
-};
+    let userInfo = {
+      id: user._id,
+      username: user.username,
+      role: user.role.toUpperCase()
+    };
 
-    if (user.role === 'STUDENT') {
-      const [students] = await connection.execute(
-        'SELECT id, name, dept FROM student_profile WHERE user_id = ?',
-        [user.id]
-      );
-      if (students.length > 0) {
-        userInfo.full_name = students[0].name;
-        userInfo.dept = students[0].dept;
+    // Student Profile
+    if (user.role.toUpperCase() === "STUDENT") {
+      const student = await StudentProfile.findOne({
+        user_id: user._id
+      });
+
+      if (student) {
+        userInfo.full_name = student.name;
+        userInfo.dept = student.dept;
       }
     }
 
+    // JWT Token
     const token = jwt.sign(
-  {
-    id: user.id,
-    username: user.username,
-    role: user.role.toUpperCase()
-  },
-  JWT_SECRET,
-  { expiresIn: '24h' }
-);
-
-    connection.release();
+      {
+        id: user._id,
+        username: user.username,
+        role: user.role.toUpperCase()
+      },
+      JWT_SECRET,
+      { expiresIn: "24h" }
+    );
 
     res.json({
-      message: 'Login successful',
+      message: "Login successful",
       token,
       user: userInfo
     });
 
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ error: 'Server error: ' + error.message });
+    console.error("Login error:", error);
+
+    res.status(500).json({
+      error: error.message
+    });
   }
 });
 
 // ==================== STUDENT ENDPOINTS ====================
 
-app.post('/api/leaves/submit',
- authenticateToken,
- authorizeRole(['student', 'STUDENT']),
- async (req, res) => {
-  try {
-   const { leave_type, start_date, end_date, reason } = req.body;
-    const userId = req.user.id;
+app.post(
+  "/api/leaves/submit",
+  authenticateToken,
+  authorizeRole(["student", "STUDENT"]),
+  async (req, res) => {
+    try {
+      const { leave_type, start_date, end_date, reason } = req.body;
 
-    if (!reason) {
-      return res.status(400).json({ error: 'Reason required' });
-    }
+      if (!reason) {
+        return res.status(400).json({
+          error: "Reason required",
+        });
+      }
 
-    const connection = await pool.getConnection();
+      const student = await StudentProfile.findOne({
+        user_id: req.user.id,
+      });
 
-   const student = await StudentProfile.findOne({
-  user_id: user._id
-});
+      if (!student) {
+        return res.status(404).json({
+          error: "Student profile not found",
+        });
+      }
 
-if (student) {
-  userInfo.full_name = student.name;
-  userInfo.dept = student.dept;
-}
+      const leave = await LeaveRequest.create({
+        student_id: student._id,
+        leave_type,
+        start_date,
+        end_date,
+        reason,
+        manager_status: "PENDING",
+        tutor_status: "PENDING",
+        final_status: "PENDING",
+      });
 
-    if (students.length === 0) {
-      connection.release();
-      return res.status(404).json({ error: 'Student profile not found' });
-    }
+      res.status(201).json({
+        message: "Leave request submitted successfully",
+        leave_id: leave._id,
+      });
 
-    const studentId = students[0].id;
+    } catch (error) {
+      console.error("Submit leave error:", error);
 
- const [result] = await connection.execute(
-  `INSERT INTO leave_requests
-  (
-    student_id,
-    leave_type,
-    start_date,
-    end_date,
-    reason,
-    manager_status,
-    tutor_status,
-    final_status,
-    created_at
-  )
-  VALUES
-  (
-    ?, ?, ?, ?, ?,
-    'PENDING',
-    'PENDING',
-    'PENDING',
-    NOW()
-  )`,
-  [
-    studentId,
-    leave_type,
-    start_date,
-    end_date,
-    reason
-  ]
-);
-  
-
-    res.status(201).json({
-      message: 'Leave request submitted successfully',
-      leave_id: result.insertId
-    });
-
-  } catch (error) {
-    console.error('Submit leave error:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-app.get('/api/leaves/my-leaves',
- authenticateToken,
- authorizeRole(['STUDENT']),
- async (req, res) => {
-
-  try {
-
-    const userId = req.user.id;
-
-    const connection = await pool.getConnection();
-
-    const [students] = await connection.execute(
-      'SELECT id FROM student_profile WHERE user_id = ?',
-      [userId]
-    );
-
-    if (students.length === 0) {
-      connection.release();
-
-      return res.status(404).json({
-        error: 'Student profile not found'
+      res.status(500).json({
+        error: error.message,
       });
     }
+  }
+);
 
-   const studentId = students[0].id;
+app.get(
+  "/api/leaves/my-leaves",
+  authenticateToken,
+  authorizeRole(["STUDENT"]),
+  async (req, res) => {
+    try {
+      const student = await StudentProfile.findOne({
+        user_id: req.user.id,
+      });
 
-console.log("BODY:", req.body);
-console.log("USER:", req.user);
-console.log("STUDENT ID:", studentId);
-    
+      if (!student) {
+        return res.status(404).json({
+          error: "Student profile not found",
+        });
+      }
 
-    const [leaves] = await connection.execute(
-      `SELECT
-        leave_requests.id,
-        leave_requests.student_id,
-        leave_requests.leave_type,
-        leave_requests.start_date,
-        leave_requests.end_date,
-        leave_requests.reason,
-        leave_requests.manager_status,
-        leave_requests.tutor_status,
-        leave_requests.final_status,
-        leave_requests.created_at,
+      const leaves = await LeaveRequest.find({
+        student_id: student._id,
+      }).sort({ createdAt: -1 });
 
-        student_profile.name,
-        student_profile.dept,
-        student_profile.year,
-        student_profile.college,
-        student_profile.hostel_name
+      res.json({
+        success: true,
+        leaves,
+      });
 
-      FROM leave_requests
+    } catch (error) {
+      console.log(error);
 
-      JOIN student_profile
-      ON leave_requests.student_id = student_profile.id
-
-      WHERE leave_requests.student_id = ?
-
-      ORDER BY leave_requests.created_at DESC`,
-      [studentId]
-    );
-
-    connection.release();
-
-    res.json({
-      success: true,
-      leaves: leaves
-    });
-
-  } catch (error) {
-
-  console.log("SUBMIT ERROR:", error);
-
-  res.status(500).json({
-    error: error.message
-  });
-}
-});
+      res.status(500).json({
+        error: error.message,
+      });
+    }
+  }
+);
 // ==================== MANAGER ENDPOINTS ====================
 
-app.get('/api/manager/pending-leaves', authenticateToken, authorizeRole(['MANAGER']), async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const connection = await pool.getConnection();
+// ==================== MANAGER ENDPOINTS ====================
 
-   const [leaves] = await connection.execute(
-  `SELECT
-    leave_requests.id,
-    leave_requests.student_id,
-    leave_requests.leave_type,
-    leave_requests.start_date,
-    leave_requests.end_date,
-    leave_requests.reason,
-    leave_requests.manager_status,
-    leave_requests.tutor_status,
-    leave_requests.final_status,
-    leave_requests.created_at,
+app.get(
+  "/api/manager/pending-leaves",
+  authenticateToken,
+  authorizeRole(["MANAGER"]),
+  async (req, res) => {
+    try {
 
-    student_profile.name AS student_name,
-    student_profile.dept,
-    student_profile.year,
-    student_profile.college,
-    student_profile.hostel_name,
-
-    users.username
-
-   FROM leave_requests
-
-   JOIN student_profile
-   ON leave_requests.student_id = student_profile.id
-
-   JOIN users
-   ON student_profile.user_id = users.id
-
-   WHERE student_profile.manager_id = ?
-   AND leave_requests.manager_status = 'PENDING'
-
-   ORDER BY leave_requests.created_at ASC`,
-  [userId]
-);
-    connection.release();
-
-    res.json({
-      message: 'Pending leaves retrieved',
-      leaves: leaves
-    });
-
-  } catch (error) {
-    console.error('Get pending leaves error:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
+      const students = await StudentProfile.find({
+  manager_id: req.user.id
 });
 
-app.post('/api/manager/approve-leave/:leaveId', authenticateToken, authorizeRole(['MANAGER']), async (req, res) => {
-  try {
-    const { leaveId } = req.params;
-    const { status } = req.body;
+const studentIds = students.map(s => s._id);
 
-    if (!['APPROVED', 'REJECTED'].includes(status)) {
-      return res.status(400).json({ error: 'Invalid status' });
+const leaves = await LeaveRequest.find({
+  student_id: { $in: studentIds },
+  manager_status: "PENDING"
+}).populate("student_id");
+
+      res.json({
+        message: "Pending leaves retrieved",
+        leaves
+      });
+
+    } catch (error) {
+      console.error("Get pending leaves error:", error);
+
+      res.status(500).json({
+        error: error.message
+      });
     }
-
-    const connection = await pool.getConnection();
-
-    await connection.execute(
-      `UPDATE leave_requests 
-       SET manager_status = ?
-       WHERE id = ?`,
-      [status, leaveId]
-    );
-
-    connection.release();
-
-    res.json({
-      message: `Leave ${status.toLowerCase()} by manager`,
-      leave_id: leaveId
-    });
-
-  } catch (error) {
-    console.error('Approve leave error:', error);
-    res.status(500).json({ error: 'Server error' });
   }
-});
+);
+
+app.post(
+  "/api/manager/approve-leave/:leaveId",
+  authenticateToken,
+  authorizeRole(["MANAGER"]),
+  async (req, res) => {
+    try {
+
+      const { leaveId } = req.params;
+      const { status } = req.body;
+
+      if (!["APPROVED", "REJECTED"].includes(status)) {
+        return res.status(400).json({
+          error: "Invalid status"
+        });
+      }
+
+      const leave = await LeaveRequest.findByIdAndUpdate(
+        leaveId,
+        {
+          manager_status: status
+        },
+        {
+          new: true
+        }
+      );
+
+      if (!leave) {
+        return res.status(404).json({
+          error: "Leave not found"
+        });
+      }
+
+      res.json({
+        message: `Leave ${status.toLowerCase()} by manager`,
+        leave_id: leave._id
+      });
+
+    } catch (error) {
+      console.error("Approve leave error:", error);
+
+      res.status(500).json({
+        error: error.message
+      });
+    }
+  }
+);
 
 // ==================== TUTOR ENDPOINTS ====================
 
-app.get('/api/tutor/pending-leaves', authenticateToken, authorizeRole(['TUTOR']), async (req, res) => {
+app.get(
+  "/api/tutor/pending-leaves",
+  authenticateToken,
+  authorizeRole(["TUTOR"]),
+  async (req, res) => {
+    try {
 
-  try {
+      const students = await StudentProfile.find({
+        tutor_id: req.user.id
+      });
 
-    const userId = req.user.id;
+      const studentIds = students.map(s => s._id);
 
-    const connection = await pool.getConnection();
+      const leaves = await LeaveRequest.find({
+        student_id: { $in: studentIds },
+        manager_status: "APPROVED",
+        tutor_status: "PENDING"
+      }).populate("student_id");
 
-    const [leaves] = await connection.execute(
-      `SELECT
-        leave_requests.id,
-        leave_requests.student_id,
-        leave_requests.leave_type,
-        leave_requests.start_date,
-        leave_requests.end_date,
-        leave_requests.reason,
-        leave_requests.manager_status,
-        leave_requests.tutor_status,
-        leave_requests.final_status,
-        leave_requests.created_at,
+      res.json({
+        message: "Pending leaves for tutor approval",
+        leaves
+      });
 
-        student_profile.name AS student_name,
-        student_profile.dept,
-        student_profile.year,
-        student_profile.college,
-        student_profile.hostel_name,
+    } catch (error) {
 
-        users.username
+      console.error("Get tutor leaves error:", error);
 
-      FROM leave_requests
-
-      JOIN student_profile
-      ON leave_requests.student_id = student_profile.id
-
-      JOIN users
-      ON student_profile.user_id = users.id
-
-      WHERE student_profile.tutor_id = ?
-      AND leave_requests.manager_status = 'APPROVED'
-      AND leave_requests.tutor_status = 'PENDING'
-
-      ORDER BY leave_requests.created_at ASC`,
-      [userId]
-    );
-
-    connection.release();
-
-    res.json({
-      message: 'Pending leaves for tutor approval',
-      leaves: leaves
-    });
-
-  } catch (error) {
-
-    console.error('Get tutor leaves error:', error);
-
-    res.status(500).json({
-      error: 'Server error'
-    });
-  }
-});
-app.post('/api/tutor/approve-leave/:leaveId', authenticateToken, authorizeRole(['TUTOR']), async (req, res) => {
-  try {
-    const { leaveId } = req.params;
-    const { status } = req.body;
-
-    if (!['APPROVED', 'REJECTED'].includes(status)) {
-      return res.status(400).json({ error: 'Invalid status' });
+      res.status(500).json({
+        error: error.message
+      });
     }
-
-    const connection = await pool.getConnection();
-
-    const finalStatus = status === 'APPROVED' ? 'APPROVED' : 'REJECTED';
-    
-    await connection.execute(
-      `UPDATE leave_requests 
-       SET tutor_status = ?, final_status = ?
-       WHERE id = ?`,
-      [status, finalStatus, leaveId]
-    );
-
-    connection.release();
-
-    res.json({
-      message: `Leave ${status.toLowerCase()} by tutor (Final)`,
-      leave_id: leaveId
-    });
-
-  } catch (error) {
-    console.error('Tutor approve leave error:', error);
-    res.status(500).json({ error: 'Server error' });
   }
-});
+);
+
+app.post(
+  "/api/tutor/approve-leave/:leaveId",
+  authenticateToken,
+  authorizeRole(["TUTOR"]),
+  async (req, res) => {
+    try {
+
+      const { leaveId } = req.params;
+      const { status } = req.body;
+
+      if (!["APPROVED", "REJECTED"].includes(status)) {
+        return res.status(400).json({
+          error: "Invalid status"
+        });
+      }
+
+      const finalStatus =
+        status === "APPROVED" ? "APPROVED" : "REJECTED";
+
+      const leave = await LeaveRequest.findByIdAndUpdate(
+        leaveId,
+        {
+          tutor_status: status,
+          final_status: finalStatus
+        },
+        {
+          new: true
+        }
+      );
+
+      if (!leave) {
+        return res.status(404).json({
+          error: "Leave not found"
+        });
+      }
+
+      res.json({
+        message: `Leave ${status.toLowerCase()} by tutor (Final)`,
+        leave_id: leave._id
+      });
+
+    } catch (error) {
+
+      console.error("Tutor approve leave error:", error);
+
+      res.status(500).json({
+        error: error.message
+      });
+    }
+  }
+);
 
 // ==================== HEALTH CHECK ====================
 
@@ -515,10 +412,11 @@ app.get('/api/health', (req, res) => {
 // ==================== START SERVER ====================
 
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
-console.log(`✅ Render Server running on port ${PORT}`);
-console.log(`🌐 Using Railway MySQL with public URL`);
-console.log(`🔐 JWT authentication enabled`);
+  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`🍃 Using MongoDB Atlas`);
+  console.log(`🔐 JWT authentication enabled`);
 });
 
 module.exports = app;
