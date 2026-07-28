@@ -1,8 +1,8 @@
 // server.js - Render Deployment Version
 // Connects to Railway MySQL via MYSQL_PUBLIC_URL
-const User = require("./models/User");
-const StudentProfile = require("./models/studentProfile");
-const LeaveRequest = require("./models/LeaveRequest");
+const User = require("./src/models/User");
+const StudentProfile = require("./src/models/studentProfile");
+const LeaveRequest = require("./src/models/LeaveRequest");
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
