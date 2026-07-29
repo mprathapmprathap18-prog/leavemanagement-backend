@@ -94,6 +94,8 @@ console.log("User found:", user);
     }
 
     // Check password
+    console.log("Entered password:", password);
+console.log("DB password:", user ? user.password : "No user");
     if (password !== user.password) {
       return res.status(401).json({
         error: "Invalid username or password"
