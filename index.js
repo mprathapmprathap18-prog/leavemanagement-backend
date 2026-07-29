@@ -83,6 +83,8 @@ app.post('/api/auth/login', async (req, res) => {
 
     // Find user in MongoDB
     const user = await User.findOne({ username });
+    console.log("Username entered:", username);
+console.log("User found:", user);
 
     if (!user) {
       return res.status(401).json({
