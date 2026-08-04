@@ -18,13 +18,15 @@ app.use(express.json());
 app.use(cors());
 // mongoo db
 console.log("MONGO_URI =", process.env.MONGO_URI);
+
 mongoose.connect(process.env.MONGO_URI)
-.then(() => {
-  console.log("✅ MongoDB Connected!");
-})
-.catch((err) => {
-  console.log("❌ MongoDB Error:", err);
-});
+  .then(() => {
+    console.log("✅ MongoDB Connected!");
+    console.log("Database:", mongoose.connection.db.databaseName);
+  })
+  .catch((err) => {
+    console.log("❌ MongoDB Error:", err);
+  });
 
 // JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_change_in_production';
