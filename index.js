@@ -118,7 +118,7 @@ console.log("DB password:", user ? user.password : "No user");
     // Student Profile
     if (user.role.toUpperCase() === "STUDENT") {
       const student = await StudentProfile.findOne({
-        user_id: user._id
+       user_id: req.user.id.toString()
       });
 
       if (student) {
@@ -170,7 +170,7 @@ app.post(
       }
 
       const student = await StudentProfile.findOne({
-        user_id: req.user.id,
+        user_id: req.user.id.toString()
       });
 
       if (!student) {
@@ -251,7 +251,7 @@ app.get(
     try {
 
       const students = await StudentProfile.find({
-  manager_id: req.user.id
+  manager_id: req.user.id.tostring()
 });
 
 const studentIds = students.map(s => s._id);
@@ -333,7 +333,7 @@ app.get(
     try {
 
       const students = await StudentProfile.find({
-        tutor_id: req.user.id
+        tutor_id: req.user.id.tostring()
       });
 
       const studentIds = students.map(s => s._id);
