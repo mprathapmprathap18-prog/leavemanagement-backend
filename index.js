@@ -168,9 +168,13 @@ app.post(
           error: "Reason required",
         });
       }
+      console.log("JWT ID:",req.user.id);
+      const allStudents=await StudentProfile.find();
+      console.log("ALL STUDENTS:",allStudents);
 const student = await StudentProfile.findOne({
     user_id: req.user.id.toString()
       });
+      console.log("FOUND STUDENT:",student);
 
       if (!student) {
         return res.status(404).json({
