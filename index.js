@@ -248,9 +248,8 @@ app.get(
   authorizeRole(["MANAGER"]),
   async (req, res) => {
     try {
-
-      const students = await StudentProfile.find({
-  manager_id:user._id.tostring()
+const students = await StudentProfile.find({
+  manager_id: req.user.id.toString()
 });
 
 const studentIds = students.map(s => s._id);
@@ -332,7 +331,7 @@ app.get(
     try {
 
       const students = await StudentProfile.find({
-        tutor_id:user._id.tostring()
+  tutor_id: req.user.id.toString()
       });
 
       const studentIds = students.map(s => s._id);
