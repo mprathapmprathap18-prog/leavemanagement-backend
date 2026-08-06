@@ -168,9 +168,8 @@ app.post(
           error: "Reason required",
         });
       }
-
-      const student = await StudentProfile.findOne({
-        user_id:user._id.toString()
+const student = await StudentProfile.findOne({
+    user_id: req.user.id.toString()
       });
 
       if (!student) {
