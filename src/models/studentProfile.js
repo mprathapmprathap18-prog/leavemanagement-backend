@@ -21,4 +21,5 @@ const studentProfileSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model("StudentProfile", studentProfileSchema);
+module.exports = mongoose.model("StudentProfile",studentProfileSchema);
+ 
