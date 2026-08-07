@@ -23,6 +23,8 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log("✅ MongoDB Connected!");
     console.log("Database:", mongoose.connection.db.databaseName);
+
+    console.log("Collection:", StudentProfile.collection.name);
   })
   .catch((err) => {
     console.log("❌ MongoDB Error:", err);
