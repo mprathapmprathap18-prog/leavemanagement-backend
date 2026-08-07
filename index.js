@@ -130,6 +130,7 @@ console.log("DB password:", user ? user.password : "No user");
     }
 
     // JWT Token
+    console.log("LOGIN USER ID:", user._id.toString());
     const token = jwt.sign(
       {
         id: user._id,
@@ -184,7 +185,16 @@ const allStudents = await StudentProfile.find();
 console.log("JWT ID:", req.user.id);
 console.log("ALL STUDENTS:", JSON.stringify(allStudents, null, 2));
 const mongoose = require("mongoose");
+const allStudents = await StudentProfile.find();
 
+console.log(
+  allStudents.map(s => ({
+    user_id: s.user_id.toString(),
+    name: s.name
+  }))
+);
+
+console.log("JWT ID:", req.user.id);
 const student = allStudents.find(
   s => s.user_id.toString() === req.user.id
 );
