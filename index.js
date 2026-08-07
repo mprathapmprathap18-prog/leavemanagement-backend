@@ -174,6 +174,14 @@ app.post(
 console.log("JWT ID TYPE:", typeof req.user.id);
 
 const allStudents = await StudentProfile.find();
+      console.log(
+  allStudents.map(s => ({
+    user_id: s.user_id.toString(),
+    name: s.name
+  }))
+);
+
+console.log("JWT ID:", req.user.id);
 console.log("ALL STUDENTS:", JSON.stringify(allStudents, null, 2));
 const mongoose = require("mongoose");
 
