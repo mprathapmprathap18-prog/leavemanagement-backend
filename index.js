@@ -175,9 +175,9 @@ const allStudents = await StudentProfile.find();
 console.log("ALL STUDENTS:", JSON.stringify(allStudents, null, 2));
 const mongoose = require("mongoose");
 
-const student = await StudentProfile.findOne({
-  user_id: new mongoose.Types.ObjectId(req.user.id)
-});
+const student = allStudents.find(
+  s => s.user_id.toString() === req.user.id
+);
 
 console.log("FOUND STUDENT:", student);
       if (!student) {
