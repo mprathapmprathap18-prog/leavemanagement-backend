@@ -168,15 +168,18 @@ app.post(
           error: "Reason required",
         });
       }
-    console.log("JWT ID:", req.user.id);
+   console.log("JWT ID:", req.user.id);
 console.log("JWT ID TYPE:", typeof req.user.id);
+
+const allStudents = await StudentProfile.find();
+console.log("ALL STUDENTS:", JSON.stringify(allStudents, null, 2));
+const mongoose = require("mongoose");
 
 const student = await StudentProfile.findOne({
   user_id: new mongoose.Types.ObjectId(req.user.id)
 });
 
 console.log("FOUND STUDENT:", student);
-
       if (!student) {
         return res.status(404).json({
           error: "Student profile not found",
