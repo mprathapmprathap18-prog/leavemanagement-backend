@@ -288,7 +288,11 @@ const studentIds = managerStudents.map(s => s._id);
 const leaves = await LeaveRequest.find({
   student_id: { $in: studentIds },
   manager_status: "PENDING"
-}).populate("student_id");
+}).populate({
+  path: "student_id",
+  select: "name dept year college hostel_name user_id"
+});
+console.log(JSON.stringify(leaves, null, 2));
 
 console.log("Pending Leaves:", leaves);-
 
