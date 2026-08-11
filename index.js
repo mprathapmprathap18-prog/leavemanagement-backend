@@ -262,16 +262,24 @@ app.get(
   authorizeRole(["MANAGER"]),
   async (req, res) => {
     try {
+console.log("===== MANAGER PENDING API =====");
+console.log("Manager JWT ID:", req.user.id);
+
 const students = await StudentProfile.find({
-  manager_id: req.user.id.toString()
+  manager_id: req.user.id
 });
 
+console.log("Students under manager:", students);
+
 const studentIds = students.map(s => s._id);
+console.log("Student IDs:", studentIds);
 
 const leaves = await LeaveRequest.find({
   student_id: { $in: studentIds },
   manager_status: "PENDING"
 }).populate("student_id");
+
+console.log("Pending Leaves:", leaves);
 
       res.json({
         message: "Pending leaves retrieved",
