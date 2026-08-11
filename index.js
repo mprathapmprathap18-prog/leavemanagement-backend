@@ -130,16 +130,17 @@ console.log("DB password:", user ? user.password : "No user");
     }
 
     // JWT Token
-    console.log("LOGIN USER ID:", user._id.toString());
-    const token = jwt.sign(
-      {
-        id: user._id,
-        username: user.username,
-        role: user.role.toUpperCase()
-      },
-      JWT_SECRET,
-      { expiresIn: "24h" }
-    );
+console.log("TOKEN ID:", user._id.toString());
+
+const token = jwt.sign(
+  {
+    id: user._id.toString(),   // 👈 toString() use pannunga
+    username: user.username,
+    role: user.role.toUpperCase()
+  },
+  JWT_SECRET,
+  { expiresIn: "24h" }
+);
 
     res.json({
       message: "Login successful",
@@ -265,21 +266,31 @@ app.get(
 console.log("===== MANAGER PENDING API =====");
 console.log("Manager JWT ID:", req.user.id);
 
-const students = await StudentProfile.find({
-  manager_id: req.user.id
-});
+const allStudents = await StudentProfile.find();
 
-console.log("Students under manager:", students);
+console.log(
+  allStudents.map(s => ({
+    name: s.name,
+    manager_id: s.manager_id.toString(),
+    jwt_id: req.user.id.toString(),
+    match: s.manager_id.toString() === req.user.id.toString()
+  }))
+);
 
-const studentIds = students.map(s => s._id);
-console.log("Student IDs:", studentIds);
+const managerStudents = allStudents.filter(
+  s => s.manager_id.toString() === req.user.id.toString()
+);
+
+console.log("Manager Students:", managerStudents);
+
+const studentIds = managerStudents.map(s => s._id);
 
 const leaves = await LeaveRequest.find({
   student_id: { $in: studentIds },
   manager_status: "PENDING"
 }).populate("student_id");
 
-console.log("Pending Leaves:", leaves);
+console.log("Pending Leaves:", leaves);-
 
       res.json({
         message: "Pending leaves retrieved",
