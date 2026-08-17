@@ -366,34 +366,57 @@ app.get(
   authorizeRole(["TUTOR"]),
   async (req, res) => {
     try {
+      console.log("===== TUTOR PENDING API =====");
+      console.log("Tutor JWT ID:", req.user.id);
 
       const students = await StudentProfile.find({
-  tutor_id: req.user.id.toString()
+        tutor_id: req.user.id.toString()
       });
 
+      console.log(
+        "Tutor Students:",
+        students.map(s => ({
+          id: s._id,
+          name: s.name,
+          tutor_id: s.tutor_id
+        }))
+      );
+
       const studentIds = students.map(s => s._id);
+
+      console.log("Student IDs:", studentIds);
 
       const leaves = await LeaveRequest.find({
         student_id: { $in: studentIds },
         manager_status: "APPROVED",
         tutor_status: "PENDING"
-      }).populate("student_id");
+      }).populate({
+        path: "student_id",
+        select: "name dept year college hostel_name user_id"
+      });
+
+      console.log(
+        "Tutor Pending Leaves:",
+        JSON.stringify(leaves, null, 2)
+      );
 
       res.json({
+        success: true,
         message: "Pending leaves for tutor approval",
         leaves
       });
 
     } catch (error) {
-
       console.error("Get tutor leaves error:", error);
 
       res.status(500).json({
+        success: false,
         error: error.message
       });
     }
   }
 );
+
 
 app.post(
   "/api/tutor/approve-leave/:leaveId",
@@ -401,7 +424,6 @@ app.post(
   authorizeRole(["TUTOR"]),
   async (req, res) => {
     try {
-
       const { leaveId } = req.params;
       const { status } = req.body;
 
@@ -432,15 +454,16 @@ app.post(
       }
 
       res.json({
+        success: true,
         message: `Leave ${status.toLowerCase()} by tutor (Final)`,
         leave_id: leave._id
       });
 
     } catch (error) {
-
       console.error("Tutor approve leave error:", error);
 
       res.status(500).json({
+        success: false,
         error: error.message
       });
     }
