@@ -310,7 +310,54 @@ console.log("Pending Leaves:", leaves);-
     }
   }
 );
+// ===============================
+// MANAGER LEAVE HISTORY
+// ===============================
+app.get(
+  "/api/manager/leave-history",
+  authenticateToken,
+  authorizeRole(["MANAGER"]),
+  async (req, res) => {
+    try {
+      console.log("===== MANAGER LEAVE HISTORY API =====");
+      console.log("Manager JWT ID:", req.user.id);
 
+      // Find students belonging to this manager
+      const students = await StudentProfile.find({
+        manager_id: req.user.id.toString(),
+      });
+
+      const studentIds = students.map((student) => student._id);
+
+      console.log("Manager Student IDs:", studentIds);
+
+      // Get ALL leaves of those students
+      const leaves = await LeaveRequest.find({
+        student_id: { $in: studentIds },
+      })
+        .populate({
+          path: "student_id",
+          select: "name dept year college hostel_name user_id",
+        })
+        .sort({ createdAt: -1 });
+
+      console.log("Manager History:", leaves);
+
+      res.json({
+        success: true,
+        message: "Manager leave history retrieved",
+        leaves,
+      });
+    } catch (error) {
+      console.error("Manager leave history error:", error);
+
+      res.status(500).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  }
+);
 app.post(
   "/api/manager/approve-leave/:leaveId",
   authenticateToken,
