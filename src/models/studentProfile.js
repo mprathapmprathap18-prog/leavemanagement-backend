@@ -2,24 +2,27 @@ const mongoose = require("mongoose");
 
 const studentProfileSchema = new mongoose.Schema({
   user_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    type: String,
     required: true,
   },
+
   name: String,
+
   dept: String,
+
   year: String,
+
   college: String,
+
   hostel_name: String,
+
   manager_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    type: String,
   },
+
   tutor_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    type: String,
   },
 });
 
-module.exports = mongoose.model("StudentProfile",studentProfileSchema);
- 
+module.exports = mongoose.model("StudentProfile", studentProfileSchema);
